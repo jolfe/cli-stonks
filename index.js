@@ -20,10 +20,14 @@ const orange = chalk.hex("#FFA500");
 const sleep = (ms = 3000) => new Promise((resolve) => setTimeout(resolve, ms));
 
 async function getAll(nftRes) {
-  createSpinner().start();
-  await sleep(1000);
-  createSpinner().stop();
   await nftRes.forEach((el) => {
+    let arr = [];
+    arr.push(el);
+
+    const spinner = createSpinner(`Fetching ${orange(el)}\n`).start();
+    setTimeout(() => {
+      spinner.success();
+    }, 1000);
     axios.get(`${baseUrl}${el}${endUrl}`).then((res) => {
       console.log(res.data);
     });
@@ -60,21 +64,29 @@ async function getReq(nftRes) {
 }
 
 async function welcome() {
-  const createdBy = chalkAnimation.neon("Created by: @jolfe \n");
+  const stonks = orange(
+    figlet.textSync("stonks", {
+      font: "cyberlarge",
+      whitespace: false,
+      width: 80,
+      defaultLayout: "full",
+    })
+  );
+  console.log(stonks);
+  const createdBy = orange(
+    "Created by " + chalk.bgYellow.white(" @jolfe ") + " on GitHub\n"
+  );
+  console.log(createdBy);
+  const loading = chalkAnimation.pulse(`warming up... \n\n`);
   await sleep();
-  createdBy.stop();
-  console.log(`
-    ${chalk.green.bold(
-      figlet.textSync("Stonks", {
-        defaultLayout: "full",
-        whitespaceBreak: true,
-        width: 90,
-      })
-    )}`);
+  loading.stop();
+  console.clear();
+  console.log();
+  console.log(stonks);
+  console.log(createdBy);
 }
 
 async function whichData(market) {
-  let choice;
   if (market === "Cryptocurrencies") {
     const multipleCheck = await inquirer.prompt({
       type: "confirm",
@@ -133,7 +145,9 @@ async function getAPIKey() {
   const response = await inquirer.prompt({
     type: "input",
     name: "api_key",
-    message: "Enter your API key",
+    message: `Enter your API key ${chalk.gray(
+      "(store in local .env to remember)"
+    )}`,
   });
 
   apiKey = response.api_key;
