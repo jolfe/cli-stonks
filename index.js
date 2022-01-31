@@ -8,21 +8,36 @@ import chalkAnimation from "chalk-animation";
 import { createSpinner } from "nanospinner";
 import axios from "axios";
 import moment from "moment";
+// import { API_KEY } from "./config/config.js";
+import setup from "./config/setup.js";
 
+const setupEnvirontment = async () => {
+  try {
+    console.log("setup complete");
+    await setup();
+  } catch {
+    console.log(chalk.red("Please run setup.js"));
+  }
+  // return setup(apiKey);
+};
+
+// Todo: restructure to ES6
 let nft;
 let nftRes;
-let apiKey = "T2C5WUK15DAKPCUX";
-let baseUrl =
+let apiKey,
+  api_key = process.env.API_KEY;
+const baseUrl =
   "https://www.alphavantage.co/query?function=CURRENCY_EXCHANGE_RATE&from_currency=";
-let endUrl = `&to_currency=USD&apikey=${apiKey}`;
+const endUrl = `&to_currency=USD&apikey=${apiKey}`;
 const orange = chalk.hex("#FFA500");
 
 const sleep = (ms = 3000) => new Promise((resolve) => setTimeout(resolve, ms));
 
 async function getAll(nftRes) {
   await nftRes.forEach((el) => {
-    let arr = [];
-    arr.push(el);
+    // let arr = [];
+    // arr.push(el);
+    // Todo: type check array length
 
     const spinner = createSpinner(`Fetching ${orange(el)}\n`).start();
     setTimeout(() => {
@@ -32,7 +47,11 @@ async function getAll(nftRes) {
       console.log(res.data);
     });
   });
-  await startOver();
+  try {
+    await startOver();
+  } catch (err) {
+    console.log(err);
+  }
 }
 
 async function getReq(nftRes) {
@@ -100,6 +119,7 @@ async function whichData(market) {
       );
       await sleep();
       buffer.stop();
+      // ! fetch multiple NFT's from the config.yml file
       const multiple = await inquirer.prompt({
         type: "checkbox",
         name: "crypto_name",
@@ -114,11 +134,21 @@ async function whichData(market) {
           "ADA",
           "XMR",
           "DASH",
+          "NEO",
+          "EOS",
+          "TRX",
+          "ETC",
+          "XEM",
+          "USDT",
+          "XMR",
+          "DASH",
+          "EOS",
         ],
       });
       getAll(multiple.crypto_name);
       nftRes = multiple.crypto_name;
     } else {
+      // ! spaghetti
       const singular = await inquirer.prompt({
         type: "list",
         name: "crypto_name",
@@ -133,6 +163,15 @@ async function whichData(market) {
           "ADA",
           "XMR",
           "DASH",
+          "NEO",
+          "EOS",
+          "TRX",
+          "ETC",
+          "XEM",
+          "USDT",
+          "XMR",
+          "DASH",
+          "EOS",
         ],
       });
       getReq(singular.crypto_name);
@@ -149,8 +188,16 @@ async function getAPIKey() {
       "(store in local .env to remember)"
     )}`,
   });
+  setupEnvirontment(process.env.API_KEY ?? response.api_key);
+  // api_key = process.env.API_KEY;
 
-  apiKey = response.api_key;
+  // console.log(process.env.API_KEY);
+  // if (response.api_key === "" || response.api_key === undefined) {
+  //   console.log(chalk.red("Please enter your API key"));
+  //   getAPIKey();
+  // } else {
+  //   return apiKey;
+  // }
 }
 
 async function getMarket() {
@@ -158,10 +205,23 @@ async function getMarket() {
     type: "list",
     name: "market_name",
     message: "Select a market",
-    choices: ["Stocks, ETFs, and Mutual Funds", "Cryptocurrencies"],
+    choices: [
+      "Stocks, ETFs, and Mutual Funds",
+      "Cryptocurrencies",
+      "Enter your own Stock Symbol",
+      "Forex",
+    ],
   });
 
-  nft = response.market_name;
+  if (response.market_name === "Enter your own Stock Symbol") {
+    const custom = await inquirer.prompt({
+      type: "input",
+      name: "custom_name",
+      message: "Enter your custom symbol",
+    });
+    getReq(custom.custom_name);
+  }
+  return (nft = response.market_name);
 }
 
 async function startOver() {
@@ -178,6 +238,7 @@ async function startOver() {
   }
 }
 
+await setupEnvirontment();
 await welcome();
 await getAPIKey();
 await getMarket();
